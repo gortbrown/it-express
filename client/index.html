@@ -1,11 +1,22 @@
 <!DOCTYPE html>
 <html>
-    <body>
-        <input type="text" id="titleBox" placeholder="What is the issue?">
-        <input type="text" id="descriptionBox" placeholder="Give a brief description of the issue...">
-        <input type="text" id="emailBox" placeholder="Email for IT to contact you back...">
+    <head>
+        <title>Submit Ticket - IT Express</title>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    
+    <body style="text-align: center;">
+        <div id="topbar">
+            <h3>IT Express</h3>
+        </div>
+        <input type="text" class="ticketinfo" id="titleBox" placeholder="What is the issue?"><br>
+        <textarea rows="5" class="ticketinfo" id="descriptionBox" placeholder="Give a brief description of the issue..." ></textarea><br>
+        <input type="text" class="ticketinfo" id="emailBox" placeholder="Email for IT to contact you back..."><br>
         <button type="submit" onclick="CreateTicket()">Submit</button>
-        <a href="viewer.html">IT View</a>
+        
     </body>
+    <footer>
+        <a href="viewer.html">IT View</a>
+    </footer>
     <script src="script.js"></script>
 </html>

@@ -1,12 +1,123 @@
 <!DOCTYPE html>
 <html>
-    <body>
-        <div id="ticketview">
-            <p>This is where tickets will show up.</p>    
-        </div>
-    </body>
-    <script src="script.js"></script>
-    <script>
-        HandleLogin();
-    </script>
+
+<head>
+    <title>IT View - IT Express</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="topbar">
+        <h3>IT Express</h3>
+    </div>
+    <div id="ticketview">
+        <h2>Login</h2>
+        <input type="text" id="username" placeholder="Username"><br>
+        <input type="password" id="password" placeholder="Password"><br>
+        <button type="submit" onclick="Login()">Login</button>
+    </div>
+    
+</body>
+<script>
+    const ws = new WebSocket("ws://localhost:8081");
+
+    var viewType = "Unsolved";
+
+    ws.addEventListener("open", (event) => {
+        ws.send("init");
+    });
+
+    ws.addEventListener("message", (event) => {
+
+        if (event.data.includes("Database")) {
+            console.log("Connected.");
+            msgSplit = event.data.split("~");
+            tickets = JSON.parse(msgSplit[1]);
+            LoadTickets("Unsolved");
+        }
+        else if (event.data.includes("Updated")) {
+            msgSplit = event.data.split("~");
+            tickets[msgSplit[1]].status = msgSplit[2];
+            LoadTickets(viewType);
+        }
+        else if (event.data == "LoginInvalid") {
+            alert("Login Invalid. Try again.");
+        }
+        else if(event.data == "ChangePassword"){
+            var newPassword = window.prompt("We found that your password is the default. Please change it for better security");
+            HashPass(newPassword).then((hashed) => ws.send("NewPassword~" + hashed));
+        }
+    });
+
+    function Login(){
+        var username = document.getElementById("username").value;
+        var password = document.getElementById("password").value;
+        HashPass(password).then((hashed) => ws.send("Login~" + username + "~" + hashed));
+        
+    }
+
+    function LoadTickets(list) {
+        var ticketViewHtml = "";
+        var count = 0;
+        if(list == "Done"){
+            ticketViewHtml += "<h2>Done Tickets</h2>";
+        }
+        else{
+            ticketViewHtml += "<h2>Unsolved Tickets</h2>";
+        }
+        tickets.forEach(t => {
+            var ticketHtml = `<div class='ticketCard'>
+            <h2> ${t.title}</h2>
+            <h4>From: ${t.email}</h4>
+            <h4>Status: ${t.status}</h4>
+            <p>${t.description}</p>
+            <h3>Change status to:</h3>
+            <button type="button" onclick="UpdateStatus(${count}, 'ToDo')">ToDo</button>
+            <button type="button" onclick="UpdateStatus(${count}, 'InProgress')">InProgress</button>
+            <button type="button" onclick="UpdateStatus(${count}, 'Done')">Done</button>
+            </div>`
+
+            if((list == "Done" && t.status == "Done") || (list == "Unsolved" && t.status != "Done")){
+                ticketViewHtml += ticketHtml;
+            }
+            count++;
+        });
+        if(list == "Done"){
+            ticketViewHtml += "<button type='button' id='changeTypeButton' onclick='ChangeType()'>Show Unsolved Tickets</button>"
+        }
+        else{
+            ticketViewHtml += "<button type='button' id='changeTypeButton' onclick='ChangeType()'>Show Done Tickets</button>";
+        }
+        document.getElementById("ticketview").innerHTML = ticketViewHtml;
+    }
+
+    function UpdateStatus(index, status) {
+        ws.send(`Update~${index}~${status}`);
+    }
+
+    function HashPass(password) {
+        const encoded = new TextEncoder().encode(password);
+        return crypto.subtle.digest('SHA-256', encoded).then((buffer) => {
+            const array = Array.from(new Uint8Array(buffer));
+            const hex = array
+                .map((bytes) => bytes.toString(16).padStart(2, '0'))
+                .join('');
+            return hex;
+        });
+    }
+
+    
+
+    function ChangeType(){
+        if(viewType == "Unsolved"){
+            viewType = "Done";
+            LoadTickets("Done");
+        }
+        else{
+            viewType = "Unsolved";
+            LoadTickets("Unsolved");
+        }
+    }
+</script>
+
 </html>
